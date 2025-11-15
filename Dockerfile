@@ -4,13 +4,14 @@
 FROM alpine:latest AS builder
 
 # 安装编译工具链：
-# 修正：将 libcunit1-dev 替换为 Alpine 中正确的包名 cunit-dev
+# 修正：增加 bsd-compat-headers 以提供 <sys/queue.h>
 RUN apk update && apk add --no-cache \
     build-base \
     cmake \
     git \
     cunit-dev \
-    musl-dev
+    musl-dev \
+    bsd-compat-headers # <-- 新增：解决 sys/queue.h 缺失问题
 
 WORKDIR /app
 # 复制 msd_lite 代码
@@ -21,8 +22,7 @@ COPY . /app
 RUN cmake -E make_directory /app/build
 WORKDIR /app/build
 
-# 2. 配置 CMake
-# 使用 -DCMAKE_C_FLAGS 和 -DCMAKE_CXX_FLAGS 添加静态链接标志
+# 2. 配置 CMake (使用静态链接 CFLAGS)
 RUN cmake /app -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-static -s" -DCMAKE_CXX_FLAGS="-static -s"
 
 # 3. 构建程序
