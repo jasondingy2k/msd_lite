@@ -1,12 +1,8 @@
 # ----------------------------------------------------
-# 引入 ARG 定义目标平台，默认值为 linux/amd64
+# 阶段 1: 编译阶段 (Build Stage) - 基于 Alpine Linux
 # ----------------------------------------------------
-ARG TARGETPLATFORM=linux/amd64
-
-# 阶段 1: 编译阶段 (Build Stage)
-# ----------------------------------------------------
-# 使用 ARG 变量替代硬编码的 "linux/amd64"
-FROM --platform=$TARGETPLATFORM alpine:latest AS builder
+# 移除 --platform 声明，依赖外部 docker build 命令指定 x86/64 架构
+FROM alpine:latest AS builder
 
 # 安装编译工具链：build-base 包含 gcc, g++, make 等
 # musl-dev 用于确保静态链接
@@ -21,14 +17,15 @@ WORKDIR /app
 COPY . /app
 
 # 编译 msd_lite
+# 修正：移除不存在的 'clean' target，只保留 'all'
 # 使用 -static 标志进行静态链接，确保最终二进制文件不依赖运行时库
-RUN make CFLAGS="-static -s" LDFLAGS="-static" clean all
+RUN make CFLAGS="-static -s" LDFLAGS="-static" all
 
 # ----------------------------------------------------
 # 阶段 2: 运行阶段 (Runtime Stage) - 使用极简 Alpine
 # ----------------------------------------------------
-# 同样使用 ARG 变量
-FROM --platform=$TARGETPLATFORM alpine:latest
+# 同样移除 --platform 声明
+FROM alpine:latest
 
 # 设定 msd_lite 程序运行目录
 WORKDIR /usr/local/bin
