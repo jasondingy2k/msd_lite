@@ -19,7 +19,7 @@ COPY . /app
 # 编译 msd_lite
 # 修正：移除不存在的 'clean' target，只保留 'all'
 # 使用 -static 标志进行静态链接，确保最终二进制文件不依赖运行时库
-RUN make CFLAGS="-static -s" LDFLAGS="-static" all
+RUN make CFLAGS="-static -s" LDFLAGS="-static"
 
 # ----------------------------------------------------
 # 阶段 2: 运行阶段 (Runtime Stage) - 使用极简 Alpine
