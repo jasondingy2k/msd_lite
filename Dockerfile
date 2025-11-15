@@ -1,8 +1,12 @@
 # ----------------------------------------------------
-# 阶段 1: 编译阶段 (Build Stage) - 基于 Alpine Linux
+# 引入 ARG 定义目标平台，默认值为 linux/amd64
 # ----------------------------------------------------
-# --platform=linux/amd64 确保目标架构为 x86/64
-FROM --platform=linux/amd64 alpine:latest AS builder
+ARG TARGETPLATFORM=linux/amd64
+
+# 阶段 1: 编译阶段 (Build Stage)
+# ----------------------------------------------------
+# 使用 ARG 变量替代硬编码的 "linux/amd64"
+FROM --platform=$TARGETPLATFORM alpine:latest AS builder
 
 # 安装编译工具链：build-base 包含 gcc, g++, make 等
 # musl-dev 用于确保静态链接
@@ -23,7 +27,8 @@ RUN make CFLAGS="-static -s" LDFLAGS="-static" clean all
 # ----------------------------------------------------
 # 阶段 2: 运行阶段 (Runtime Stage) - 使用极简 Alpine
 # ----------------------------------------------------
-FROM --platform=linux/amd64 alpine:latest
+# 同样使用 ARG 变量
+FROM --platform=$TARGETPLATFORM alpine:latest
 
 # 设定 msd_lite 程序运行目录
 WORKDIR /usr/local/bin
@@ -37,5 +42,4 @@ COPY --from=builder /app/conf/msd_lite.conf /etc/msd_lite.conf
 EXPOSE 8016
 
 # 启动 msd_lite 程序，使用修改后的配置文件。
-# 注意：此命令假设 msd_lite 程序使用 -c 参数指定配置文件路径。
 CMD ["./msd_lite", "-c", "/etc/msd_lite.conf"]
