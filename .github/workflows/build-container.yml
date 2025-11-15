@@ -1,0 +1,42 @@
+name: Build RouterOS Container Image
+
+on:
+  push:
+    branches:
+      - master  # 如果你的主分支叫 main，请改为 main
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build-and-export:
+    # 使用标准的 Ubuntu 运行器，它预装了 Docker
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码 (Checkout repository)
+        uses: actions/checkout@v4
+
+      - name: 登录 Docker Hub (如果需要推送，可选)
+        # 如果你只想构建 .tar 文件并作为 Artifact 下载，可以跳过此步骤
+        run: echo "Skipping Docker Hub login."
+
+      - name: 构建 Docker 镜像 (Build Docker Image for x86/64)
+        # 注意：这里的 --platform=linux/amd64 是关键
+        run: |
+          docker build \
+            --platform=linux/amd64 \
+            -t msd-lite-custom:latest \
+            .
+
+      - name: 导出镜像为 Tar 文件 (Export Image to .tar)
+        # 将构建好的镜像保存为 RouterOS 可导入的 tar 文件
+        run: docker save msd-lite-custom:latest -o msd-lite-custom.tar
+        
+      - name: 上传 .tar 文件作为 Artifact (Upload Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: routeros-msd-lite-x86_64
+          path: msd-lite-custom.tar
+          retention-days: 7 # 文件保留 7 天
+          
+      - name: 清理镜像 (Clean up)
+        run: docker rmi msd-lite-custom:latest
